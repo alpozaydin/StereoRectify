@@ -1,0 +1,16 @@
+# config.yaml
+# Stereo-rectify parameters
+
+images:
+  left:  path/to/left/image.png
+  right: path/to/right/image.png
+
+camera:
+  focal_length_mm: 50.0
+  pixel_size_m:     7.4e-6
+  baseline_m:       0.270
+  dist_coeffs:      [0.0, 0.0, 0.0, 0.0, 0.0]
+
+rectify:
+  alpha: -1
+  output_dir: rectified_out
