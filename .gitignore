@@ -1,0 +1,6 @@
+*.png
+*.jpg
+*.npy
+*.npz
+rectified_out/
+rect_check/
