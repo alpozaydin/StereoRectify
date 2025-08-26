@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 from pathlib import Path
 
+VISUAL_TEST = True  # set to True to visualize feature matches
+
 def draw_grid(img,
               spacing: int = 50,
               color: tuple = (0, 0, 255),
@@ -50,8 +52,8 @@ def main():
     out_dir.mkdir(exist_ok=True, parents=True)
 
     # 1) Load & detect/match ORB features
-    img1 = cv2.imread(args.left,  cv2.IMREAD_GRAYSCALE)
-    img2 = cv2.imread(args.right, cv2.IMREAD_GRAYSCALE)
+    img1 = cv2.imread(args.left,  cv2.IMREAD_COLOR)
+    img2 = cv2.imread(args.right, cv2.IMREAD_COLOR)
     orb = cv2.ORB_create(1000)
     k1, d1 = orb.detectAndCompute(img1, None)
     k2, d2 = orb.detectAndCompute(img2, None)
@@ -60,6 +62,16 @@ def main():
 
     pts1 = np.float32([k1[m.queryIdx].pt for m in matches])
     pts2 = np.float32([k2[m.trainIdx].pt for m in matches])
+
+    # After detecting the features, we can visualize the matches of images side by side
+    if VISUAL_TEST:
+        # print number of matches
+        print(f"Found {len(matches)} matches")
+        img_matches = cv2.drawMatches(img1, k1, img2, k2, matches[:250], None,
+                                    flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+        cv2.imshow("Matches", img_matches)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     # 2) Estimate Fundamental matrix (with RANSAC) → keep only inliers
     F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_RANSAC)
@@ -75,6 +87,16 @@ def main():
     print(f"Matches (inliers): {len(in1)}")
     print(f"Median |Δy| = {med_dy:.3f} px")
     print(f"Mean   |Δy| = {mean_dy:.3f} px\n")
+
+    # all matched vertical offsets (before RANSAC)
+    dys_all = np.abs(pts1[:, 1] - pts2[:, 1])
+    med_dy_all = np.median(dys_all)
+    mean_dy_all = np.mean(dys_all)
+    print("\n=== All Matches Vertical Offset (pre-RANSAC) ===\n")
+    print(f"Matches (raw): {len(pts1)}")
+    print(f"Median |Δy| = {med_dy_all:.3f} px")
+    print(f"Mean   |Δy| = {mean_dy_all:.3f} px\n")
+
 
     # 4) Visual test: optionally draw horizontal lines at each inlier y (from left) on both images
     if getattr(args, "visual_test", False):  # default to False if not present

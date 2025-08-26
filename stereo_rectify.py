@@ -11,6 +11,8 @@ import cv2
 import numpy as np
 import os
 
+VISUAL_TEST = True  # set to True to visualize feature matches
+
 # --- 1. Load config.yaml ---
 with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
@@ -55,6 +57,9 @@ K = np.array([
     [0.0,    0.0, 1.0]
 ], dtype=np.float64)
 
+# print old one too
+print("Original intrinsics:\n", K)
+
 # --- 5. ORB feature detection & matching ---
 orb = cv2.ORB_create(2000)
 kp1, des1 = orb.detectAndCompute(img1, None)
@@ -64,6 +69,16 @@ bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 matches = sorted(bf.match(des1, des2), key=lambda m: m.distance)[:1000]
 pts1 = np.float32([kp1[m.queryIdx].pt for m in matches])
 pts2 = np.float32([kp2[m.trainIdx].pt for m in matches])
+
+# After detecting the features, we can visualize the matches of images side by side
+if VISUAL_TEST:
+    # print number of matches
+    print(f"Found {len(matches)} matches")
+    img_matches = cv2.drawMatches(img1_color, kp1, img2_color, kp2, matches[:250], None,
+                                  flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    cv2.imshow("Matches", img_matches)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 # --- 6. Estimate Essential matrix & recover pose ---
 E, _       = cv2.findEssentialMat(pts1, pts2, K,
